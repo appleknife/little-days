@@ -1,5 +1,5 @@
 // Little Days offline support. Bump VERSION whenever you upload a new index.html.
-const VERSION = "little-days-v4";
+const VERSION = "little-days-v5";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
 
 self.addEventListener("install", e => {

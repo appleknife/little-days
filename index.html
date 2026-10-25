@@ -1290,8 +1290,8 @@ function renderSettings() {
     <div class="card"><h2>Bottom bar</h2>
       <p class="small muted">Pick up to four tabs for this phone. Everything else stays under More.</p>
       <div class="field-row">${[0,1,2,3].map(i => { const cur = tabConfig()[i] || "";
-        return `<div class="field"><label class="label" for="tab-${i}">Tab ${i + 1}</label><select id="tab-${i}" data-tabslot="${i}">${i >= 2 ? `<option value="" ${!cur ? "selected" : ""}>(none)</option>` : ""}<option value="${AUTO}" ${cur === AUTO ? "selected" : ""}>Pregnancy, then Activities</option>${Object.entries(VIEWS).map(([k, v]) => `<option value="${k}" ${cur === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select></div>`; }).join("")}</div>
-      <p class="small muted">"Pregnancy, then Activities" shows Pregnancy until the due date and Activities after. Each phone keeps its own choice.</p>
+        return `<div class="field"><label class="label" for="tab-${i}">Tab ${i + 1}</label><select id="tab-${i}" data-tabslot="${i}">${i >= 2 ? `<option value="" ${!cur ? "selected" : ""}>(none)</option>` : ""}<option value="${AUTO}" ${cur === AUTO ? "selected" : ""}>Pregnancy, then Schedules</option>${Object.entries(VIEWS).map(([k, v]) => `<option value="${k}" ${cur === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select></div>`; }).join("")}</div>
+      <p class="small muted">"Pregnancy, then Schedules" shows Pregnancy until the due date and Schedules after. Each phone keeps its own choice.</p>
       <button class="btn alt" data-act="tabs-reset">Reset to default</button></div>
     <div class="card"><h2>Look</h2>
       <div class="field"><label class="label" for="set-theme">Theme on this phone</label><select id="set-theme"><option value="auto" ${!root.dataset.theme ? "selected" : ""}>Match my phone</option><option value="light" ${root.dataset.theme === "light" ? "selected" : ""}>Day</option><option value="dark" ${root.dataset.theme === "dark" ? "selected" : ""}>Night</option></select></div></div>
@@ -1320,10 +1320,10 @@ const VIEWS = {
   schedules: ["Schedules","Sample days for her age","🗓️",'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
   settings: ["Settings","Birthday, units, tabs, caregivers, backup","⚙️",'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>']
 };
-const AUTO = "auto"; // Pregnancy before the due date, Activities after
+const AUTO = "auto"; // Pregnancy before the due date, Schedules after
 const DEFAULT_TABS = ["today","log",AUTO,"health"];
 function tabConfig() { try { const t = JSON.parse(local.get("tabs") || "null"); if (Array.isArray(t) && t.length >= 2 && t.length <= 4 && t.every(x => x === AUTO || VIEWS[x])) return t; } catch(e) {} return DEFAULT_TABS; }
-function slot3() { const g = gestation(); return g && g.daysLeft > 0 ? "pregnancy" : "activities"; }
+function slot3() { const g = gestation(); return g && g.daysLeft > 0 ? "pregnancy" : "schedules"; }
 const resolveTab = k => k === AUTO ? slot3() : k;
 function barViews() { const out = []; for (const k of tabConfig().map(resolveTab)) if (!out.includes(k)) out.push(k); return out; }
 let lastBarKey = "";
@@ -1952,7 +1952,7 @@ document.addEventListener("change", ev => {
   if (id === "set-units") save(S.putSettings({ units: v }));
   if (id === "set-temp") save(S.putSettings({ temp: v }));
   if (id === "set-clock") save(S.putSettings({ clock: v }));
-  if (id === "set-theme") { if (v === "auto") { delete root.dataset.theme; local.set("theme", null); } else { root.dataset.theme = v; local.set("theme", v); } syncThemeBtn(); }
+  if (id === "set-theme") { if (v === "auto") { delete root.dataset.theme; local.set("theme", "auto"); } else { root.dataset.theme = v; local.set("theme", v); } syncThemeBtn(); }
 });
 document.addEventListener("toggle", ev => { if (ev.target.id === "safeBox" && !ev.target.open) local.set("safeSeen", "1");
   if (ev.target.dataset?.grp) { const m = Number(ev.target.dataset.grp); if (ev.target.open) msOpen = m; else if (msOpen === m) msOpen = -1; } }, true);
@@ -1961,7 +1961,7 @@ document.addEventListener("toggle", ev => { if (ev.target.id === "safeBox" && !e
 const root = document.documentElement;
 const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
 function syncThemeBtn() { $("#themeBtn").textContent = isDark() ? "Day mode" : "Night mode"; }
-const savedTheme = local.get("theme"); if (savedTheme) root.dataset.theme = savedTheme;
+const savedTheme = local.get("theme"); if (savedTheme !== "auto") root.dataset.theme = savedTheme === "dark" ? "dark" : "light";
 $("#themeBtn").addEventListener("click", () => { const t = isDark() ? "light" : "dark"; root.dataset.theme = t; local.set("theme", t); syncThemeBtn(); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", syncThemeBtn);
 syncThemeBtn();
