@@ -1,6 +1,4 @@
-// Household sharing settings. Paste your two values from Supabase (Project Settings → API) between the quotes.
-// Leave them empty to keep every phone separate.
 window.LD_CONFIG = {
-  supabaseUrl: "",   // looks like https://abcdefghijklmnop.supabase.co
-  supabaseKey: ""    // the "anon public" key (starts with eyJ...) or the "publishable" key (starts with sb_publishable_...)
+  supabaseUrl: "https://iwfjybhjkqxahnzcqqeu.supabase.co",
+  supabaseKey: "sb_publishable_bRgImPM6AZ2zZe8A5qsdAg_-Enjs-cm"
 };
