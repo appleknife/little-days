@@ -339,8 +339,8 @@ h1, h2, h3 { font-weight: 600; letter-spacing: 0; }
 .moods button { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 6px 2px; display: grid; justify-items: center; cursor: pointer; }
 .moods button span:first-child { font-size: 1.5rem; }
 .moods button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.hcode { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1.3rem; font-weight: 700; letter-spacing: .06em; background: var(--sunk); border-radius: 14px; padding: 12px 14px; text-align: center; user-select: all; -webkit-user-select: all; }
 </style>
-
 </head>
 <body>
 <div class="wrap">
@@ -376,6 +376,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: 0; }
 
 <div id="sheetRoot"></div>
 
+<script src="config.js"></script>
 <script>
 // ---------- WHO growth standards, girls 0–24 months: [L, M, S] per month ----------
 const WHO_GIRLS = {"weight":[[0.3809,3.2322,0.14171],[0.1714,4.1873,0.13724],[0.0962,5.1282,0.13],[0.0402,5.8458,0.12619],[-0.005,6.4237,0.12402],[-0.043,6.8985,0.12274],[-0.0756,7.297,0.12204],[-0.1039,7.6422,0.12178],[-0.1288,7.9487,0.12181],[-0.1507,8.2254,0.12199],[-0.17,8.48,0.12223],[-0.1872,8.7192,0.12247],[-0.2024,8.9481,0.12268],[-0.2158,9.1699,0.12283],[-0.2278,9.387,0.12294],[-0.2384,9.6008,0.12299],[-0.2478,9.8124,0.12303],[-0.2562,10.0226,0.12306],[-0.2637,10.2315,0.12309],[-0.2703,10.4393,0.12315],[-0.2762,10.6464,0.12323],[-0.2815,10.8534,0.12335],[-0.2862,11.0608,0.1235],[-0.2903,11.2688,0.12369],[-0.2941,11.4775,0.1239]],"length":[[1.0,49.1477,0.0379],[1.0,53.6872,0.0364],[1.0,57.0673,0.03568],[1.0,59.8029,0.0352],[1.0,62.0899,0.03486],[1.0,64.0301,0.03463],[1.0,65.7311,0.03448],[1.0,67.2873,0.03441],[1.0,68.7498,0.0344],[1.0,70.1435,0.03444],[1.0,71.4818,0.03452],[1.0,72.771,0.03464],[1.0,74.015,0.03479],[1.0,75.2176,0.03496],[1.0,76.3817,0.03514],[1.0,77.5099,0.03534],[1.0,78.6055,0.03555],[1.0,79.671,0.03576],[1.0,80.7079,0.03598],[1.0,81.7182,0.0362],[1.0,82.7036,0.03643],[1.0,83.6654,0.03666],[1.0,84.604,0.03688],[1.0,85.5202,0.03711],[1.0,86.4153,0.03734]],"head":[[1.0,33.8787,0.03496],[1.0,36.5463,0.0321],[1.0,38.2521,0.03168],[1.0,39.5328,0.0314],[1.0,40.5817,0.03119],[1.0,41.459,0.03102],[1.0,42.1995,0.03087],[1.0,42.829,0.03075],[1.0,43.3671,0.03063],[1.0,43.83,0.03053],[1.0,44.2319,0.03044],[1.0,44.5844,0.03035],[1.0,44.8965,0.03027],[1.0,45.1752,0.03019],[1.0,45.4265,0.03012],[1.0,45.6551,0.03006],[1.0,45.865,0.02999],[1.0,46.0598,0.02993],[1.0,46.2424,0.02987],[1.0,46.4152,0.02982],[1.0,46.5801,0.02977],[1.0,46.7384,0.02972],[1.0,46.8913,0.02967],[1.0,47.0391,0.02962],[1.0,47.1822,0.02957]]}
@@ -1294,7 +1295,8 @@ function renderSettings() {
       <button class="btn alt" data-act="tabs-reset">Reset to default</button></div>
     <div class="card"><h2>Look</h2>
       <div class="field"><label class="label" for="set-theme">Theme on this phone</label><select id="set-theme"><option value="auto" ${!root.dataset.theme ? "selected" : ""}>Match my phone</option><option value="light" ${root.dataset.theme === "light" ? "selected" : ""}>Day</option><option value="dark" ${root.dataset.theme === "dark" ? "selected" : ""}>Night</option></select></div></div>
-    ${!window.claude ? `<div class="card"><h2>Your data</h2><p class="small">Everything you log is saved on this phone only. Nothing is sent anywhere.</p><p class="small muted">Use Backup below now and then, and before switching phones.</p></div>` : ""}
+    ${!window.claude ? `<div class="card" id="syncCard">${syncCardHtml()}</div>
+    <div class="card"><h2>Your data</h2><p class="small">${Sync.active() ? "Everything is saved on this phone, and an encrypted copy is shared with the other phones in your household." : "Everything you log is saved on this phone only. Nothing is sent anywhere."}</p><p class="small muted">Use Backup below now and then, and before switching phones.</p></div>` : ""}
     <div class="card" ${!window.claude ? "hidden" : ""}><h2>Caregivers</h2>
       <p class="small">Everyone who logs for Ayla sees the same log, live. To add a caregiver: open this page's <b>Share</b> menu, invite them by email as an <b>Editor</b>, and keep the public link turned off. They'll need a free Claude account.</p>
       <p class="small muted">${S.mode === "shared" ? "This phone is on the shared log." : "This phone is saving on its own right now."}</p></div>
@@ -1964,8 +1966,142 @@ $("#themeBtn").addEventListener("click", () => { const t = isDark() ? "light" : 
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", syncThemeBtn);
 syncThemeBtn();
 
+// ---------- HOUSEHOLD SHARING (standalone app) ----------
+// Entries are encrypted on the phone with a key made from the household code, then stored in Supabase.
+// The database only ever sees scrambled data and a hashed household id. Pregnancy entries never leave the phone.
+const Sync = {
+  cfg: window.LD_CONFIG || {}, code: null, hh: null, key: null, timer: null, busy: false,
+  queue: {}, seen: {}, lastAt: null, lastOk: null, lastErr: "",
+  KINDS: { ev: "events", gr: "growth", set: "settings", fi: "firsts", ch: "checks", vi: "visits", va: "vaccines" },
+  configured() { return !!(this.cfg.supabaseUrl && this.cfg.supabaseKey) && !!(window.crypto && crypto.subtle); },
+  active() { return !!this.key; },
+  loadState() { try { const s = JSON.parse(local.get("ld-sync") || "{}"); this.code = s.code || null; this.queue = s.queue || {}; this.seen = s.seen || {}; this.lastAt = s.lastAt || null; this.lastOk = s.lastOk || null; } catch(e) {} },
+  saveState() { local.set("ld-sync", JSON.stringify({ code: this.code, queue: this.queue, seen: this.seen, lastAt: this.lastAt, lastOk: this.lastOk })); },
+  newCode() { const A = "23456789ABCDEFGHJKMNPQRSTUVWXYZ", b = crypto.getRandomValues(new Uint8Array(16)); let c = ""; for (let i = 0; i < 16; i++) c += A[b[i] % A.length]; return c; },
+  clean(c) { return String(c || "").toUpperCase().replace(/[^23456789A-HJKMNP-Z]/g, ""); },
+  pretty(c) { return c ? c.match(/.{1,4}/g).join("-") : ""; },
+  async derive(code) {
+    const enc = new TextEncoder();
+    const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("little-days-household:" + code)));
+    this.hh = [...h].slice(0, 16).map(x => x.toString(16).padStart(2, "0")).join("");
+    const base = await crypto.subtle.importKey("raw", enc.encode(code), "HKDF", false, ["deriveKey"]);
+    this.key = await crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: enc.encode("little-days-v1"), info: enc.encode("entries") }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  },
+  b64(u8) { let s = ""; for (const x of u8) s += String.fromCharCode(x); return btoa(s); },
+  unb64(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; },
+  async seal(obj) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, this.key, new TextEncoder().encode(JSON.stringify(obj))); return { iv: this.b64(iv), data: this.b64(new Uint8Array(ct)) }; },
+  async open(iv, data) { const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: this.unb64(iv) }, this.key, this.unb64(data)); return JSON.parse(new TextDecoder().decode(pt)); },
+  headers() { const k = this.cfg.supabaseKey, h = { apikey: k, "Content-Type": "application/json" }; if (k.startsWith("eyJ")) h.Authorization = "Bearer " + k; return h; },
+  rpc(fn, body) { return fetch(this.cfg.supabaseUrl.replace(/\/+$/, "") + "/rest/v1/rpc/" + fn, { method: "POST", headers: this.headers(), body: JSON.stringify(body) }); },
+  enqueue(kind, id, obj) { if (!this.active()) return; this.queue[kind + ":" + id] = obj ? { obj } : { del: true }; this.saveState(); this.kick(); },
+  enqueueAll(withSettings = true) {
+    for (const e of S.events.values()) this.queue["ev:" + e.id] = { obj: e };
+    for (const g of S.growth.values()) this.queue["gr:" + g.id] = { obj: g };
+    if (withSettings && Object.keys(S.settings).length) this.queue["set:main"] = { obj: S.settings };
+    for (const [k, c] of [["fi","firsts"],["ch","checks"],["vi","visits"],["va","vaccines"]]) for (const o of S.col[c].values()) this.queue[k + ":" + o.id] = { obj: o };
+    this.saveState();
+  },
+  kick() { clearTimeout(this.kt); this.kt = setTimeout(() => this.run(), 400); },
+  async push() {
+    const ids = Object.keys(this.queue).slice(0, 200); if (!ids.length) return;
+    const refs = Object.fromEntries(ids.map(id => [id, this.queue[id]])), rows = [];
+    for (const id of ids) { const q = this.queue[id]; if (q.del) rows.push({ household: this.hh, id, iv: null, data: null, deleted: true }); else { const s = await this.seal(q.obj); rows.push({ household: this.hh, id, iv: s.iv, data: s.data, deleted: false }); } }
+    const res = await this.rpc("ld_push", { hh: this.hh, rows: rows.map(({ household, ...r }) => r) });
+    if (!res.ok) throw new Error("push " + res.status);
+    for (const id of ids) if (this.queue[id] === refs[id]) delete this.queue[id]; // keep it if it changed again while uploading
+    this.saveState();
+    if (Object.keys(this.queue).length) return this.push();
+  },
+  async pull() {
+    // Re-read a small overlap each time so rows that committed late are never missed; seen[] makes it idempotent.
+    const since = this.lastAt ? new Date(new Date(this.lastAt.replace(/(\.\d{3})\d+/, "$1")).getTime() - 60000).toISOString() : "1970-01-01T00:00:00Z";
+    let changed = false, more = true, cursor = since;
+    while (more) {
+      const res = await this.rpc("ld_pull", { hh: this.hh, since: cursor });
+      if (!res.ok) throw new Error("pull " + res.status);
+      const rows = await res.json();
+      for (const r of rows) {
+        if (this.seen[r.id] === r.updated_at) continue;
+        this.seen[r.id] = r.updated_at;
+        if (!this.lastAt || r.updated_at > this.lastAt) this.lastAt = r.updated_at;
+        if (this.queue[r.id]) continue; // this phone has a newer change waiting to upload
+        const [kind, ...rest] = r.id.split(":"), id = rest.join(":");
+        let obj = null; if (!r.deleted) { try { obj = await this.open(r.iv, r.data); } catch (e) { continue; } }
+        this.apply(kind, id, obj); changed = true;
+      }
+      more = rows.length === 500 && rows[rows.length - 1].updated_at !== cursor; if (more) cursor = rows[rows.length - 1].updated_at;
+    }
+    if (changed) { S.saveLocal(); render(); }
+    this.saveState();
+  },
+  apply(kind, id, obj) {
+    if (kind === "ev") obj ? S.events.set(id, obj) : S.events.delete(id);
+    else if (kind === "gr") obj ? S.growth.set(id, obj) : S.growth.delete(id);
+    else if (kind === "set") { if (obj) S.settings = { ...obj }; }
+    else if (this.KINDS[kind]) { const c = this.KINDS[kind]; obj ? S.col[c].set(id, obj) : S.col[c].delete(id); }
+  },
+  async run() {
+    if (!this.active() || this.busy) return; this.busy = true;
+    try { await this.push(); await this.pull(); this.lastOk = Date.now(); this.lastErr = ""; }
+    catch (e) { this.lastErr = navigator.onLine === false ? "offline" : "error"; }
+    finally { this.busy = false; this.saveState(); if (view === "settings") renderSyncCard(); }
+  },
+  async start(code, isNew) {
+    this.code = code; await this.derive(code); this.seen = {}; this.lastAt = null;
+    this.enqueueAll(isNew); this.saveState(); await this.run(); this.loop();
+    toast(isNew ? "Sharing is on. Send the code to your partner." : "Joined. Entries from both phones will show up here.");
+  },
+  stop() { clearInterval(this.timer); this.timer = null; this.code = null; this.key = null; this.hh = null; this.queue = {}; this.seen = {}; this.lastAt = null; this.lastOk = null; this.saveState(); },
+  loop() { clearInterval(this.timer); this.timer = setInterval(() => { if (document.visibilityState === "visible") this.run(); }, 15000); },
+  async init() {
+    this.loadState(); if (!this.code || !this.configured()) return;
+    try { await this.derive(this.code); } catch (e) { return; }
+    this.run(); this.loop();
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") this.run(); });
+    window.addEventListener("online", () => this.run());
+  }
+};
+// Every change saved on this phone also goes into the upload queue.
+(() => {
+  const wrap = (name, after) => { const orig = S[name].bind(S); S[name] = async (...a) => { const r = await orig(...a); try { after(...a); } catch (e) {} return r; }; };
+  wrap("putEvent", e => Sync.enqueue("ev", e.id, S.events.get(e.id) || e));
+  wrap("delEvent", e => Sync.enqueue("ev", e.id, null));
+  wrap("putGrowth", g => Sync.enqueue("gr", g.id, g));
+  wrap("delGrowth", g => Sync.enqueue("gr", g.id, null));
+  wrap("putSettings", () => Sync.enqueue("set", "main", S.settings));
+  const K = { firsts: "fi", checks: "ch", visits: "vi", vaccines: "va" };
+  wrap("putDoc", (c, o) => K[c] && Sync.enqueue(K[c], o.id, o));
+  wrap("delDoc", (c, o) => K[c] && Sync.enqueue(K[c], o.id, null));
+})();
+function syncCardHtml() {
+  if (!Sync.configured()) return `<h2>Share with a partner</h2><p class="small">Sharing isn't switched on for this copy of the app yet.</p><p class="small muted">Whoever set up this site can turn it on by following the steps in its README.</p>`;
+  if (!Sync.active()) return `<h2>Share with a partner</h2>
+    <p class="small">Log together on two or more phones. Feeds, sleep, diapers, growth, milestones, vaccines and settings stay in step. Pregnancy entries stay private to each phone.</p>
+    <div class="report-btns"><button class="btn" data-sync="start">Start sharing</button></div>
+    <div class="field"><label class="label" for="join-code">Or join with a code</label><div style="display:grid;grid-template-columns:1fr auto;gap:8px"><input id="join-code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX"><button class="btn alt" data-sync="join">Join</button></div></div>
+    <p class="small muted">Install the app on the home screen first, then share or join from inside it. Entries are encrypted on the phone before they're sent, so nobody else, including whoever runs this site, can read them.</p>`;
+  const pending = Object.keys(Sync.queue).length;
+  const status = Sync.lastErr === "offline" ? "Offline. Changes will upload when you're back online." : Sync.lastErr ? "Couldn't reach the server. It will keep trying." : pending ? `Uploading ${pending} change${pending > 1 ? "s" : ""}…` : Sync.lastOk ? `Up to date (checked ${ago(Sync.lastOk)})` : "Connecting…";
+  return `<h2>Share with a partner</h2>
+    <p class="small">Sharing is on. Your household code:</p>
+    <div class="hcode" id="hcode">${esc(Sync.pretty(Sync.code))}</div>
+    <div class="report-btns"><button class="btn" data-sync="copy">Copy code</button><button class="btn alt" data-sync="now">Sync now</button></div>
+    <p class="small muted">${esc(status)}</p>
+    <p class="small">On the other phone: install the app, open Settings, tap <b>Join with a code</b>, and enter this code. Anyone with the code can see and add to this log, so only share it with people you trust.</p>
+    <details class="fold"><summary>Stop sharing on this phone</summary><div style="display:grid;gap:8px"><p class="small muted">This phone keeps everything logged so far but stops getting updates. The other phones keep sharing.</p><button class="btn danger" data-sync="stop">Stop sharing on this phone</button></div></details>`;
+}
+function renderSyncCard() { const el = document.getElementById("syncCard"); if (el) { el.innerHTML = syncCardHtml(); pxTree(el); } }
+document.addEventListener("click", async ev => {
+  const b = ev.target.closest("[data-sync]"); if (!b) return; const a = b.dataset.sync;
+  if (a === "start") { b.disabled = true; await Sync.start(Sync.newCode(), true); return render(); }
+  if (a === "join") { const c = Sync.clean($("#join-code").value); if (c.length !== 16) return toast("That code should have 16 letters and numbers."); b.disabled = true; await Sync.start(c, false); return render(); }
+  if (a === "copy") { const t = Sync.pretty(Sync.code); if (navigator.clipboard?.writeText) navigator.clipboard.writeText(t).then(() => toast("Code copied."), () => toast("Select the code and copy it.")); else toast("Select the code and copy it."); return; }
+  if (a === "now") { await Sync.run(); return toast(Sync.lastErr ? "Couldn't sync right now." : "Up to date."); }
+  if (a === "stop") { Sync.stop(); toast("Sharing stopped on this phone."); return render(); }
+});
+
 // ---------- boot ----------
-S.loadLocal(); P.load();
+S.loadLocal(); P.load(); Sync.init();
 try { kickSession = JSON.parse(local.get("kick") || "null"); } catch(e) {}
 setView(location.hash.slice(1) || "today");
 initShared();
