@@ -1,5 +1,5 @@
 // Little Days offline support. Bump VERSION whenever you upload a new index.html.
-const VERSION = "little-days-v2";
+const VERSION = "little-days-v3";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
 
 self.addEventListener("install", e => {
@@ -12,10 +12,12 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  // The app page: try the network first so updates arrive, fall back to the saved copy offline.
-  if (req.mode === "navigate") {
-    e.respondWith(fetch(req).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put("index.html", copy)); return res; })
-      .catch(() => caches.match("index.html")));
+  // The app page and its settings: try the network first so updates arrive, fall back to the saved copy offline.
+  if (req.mode === "navigate" || (url.origin === location.origin && url.pathname.endsWith("/config.js"))) {
+    const key = req.mode === "navigate" ? "index.html" : req;
+    const net = req.mode === "navigate" ? fetch(req) : fetch(req.url, { cache: "no-store" });
+    e.respondWith(net.then(res => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(key, copy)); } return res; })
+      .catch(() => caches.match(key)));
     return;
   }
   // Fonts and icons: use the saved copy, refresh it in the background.
